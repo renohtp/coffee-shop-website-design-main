@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Pasogit — Pesan Kopi, Makanan & Cemilan</title>
+
+    <!-- SWIPER -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
+
+    <!-- Font Awesome CDN Link -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <!-- Custom CSS File Link -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- NOTIFIKASI TOAST -->
+    <div class="toast-notif" id="toast-notif">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Menu ditambahkan ke keranjang</span>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div id="menu-btn" class="fas fa-bars" aria-label="Buka Menu Navigasi"></div>
+
+        <a href="#home" class="logo">coffee pasogit <i class="fas fa-mug-hot"></i></a>
+
+        <nav class="navbar">
+            <a href="#home">beranda</a>
+            <a href="#about">tentang kami</a>
+            <a href="#menu">menu</a>
+            <a href="#review">ulasan</a>
+            <a href="#book">reservasi</a>
+        </nav>
+
+        <div class="header-actions">
+            <button type="button" id="cart-btn" class="cart-btn" aria-label="Buka Keranjang Pesanan">
+                <i class="fas fa-shopping-bag"></i>
+                <span class="cart-label">Keranjang</span>
+                <span id="cart-count" class="cart-badge">0</span>
+            </button>
+            <a href="#book" class="btn btn-outline">pesan meja</a>
+        </div>
+    </header>
+
+    <!-- OVERLAY & DRAWER KERANJANG BELANJA (BISA DI-SCROLL KHUSUS) -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+    <aside class="cart-drawer" id="cart-drawer" aria-label="Keranjang Pesanan">
+        <div class="cart-header">
+            <div>
+                <h3><i class="fas fa-shopping-bag"></i> Keranjang Pesanan</h3>
+                <p class="cart-subtitle">Scroll untuk periksa item, QRIS & detail pesanan</p>
+            </div>
+            <button type="button" id="close-cart" class="icon-close-btn" aria-label="Tutup Keranjang">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="cart-scroll-body" id="cart-scroll-body">
+            <div class="cart-items" id="cart-items"></div>
+
+            <div class="cart-footer">
+                <div class="cart-summary-row">
+                    <span>Total Item</span>
+                    <span id="cart-total-qty">0 item</span>
+                </div>
+                <div class="cart-total">
+                    <span>Total Pembayaran</span>
+                    <span id="cart-total-price">Rp 0</span>
+                </div>
+
+                <div class="checkout-form">
+                    <div class="input-group">
+                        <label for="customer-name">Nama Pemesan <span class="req">*</span></label>
+                        <input type="text" id="customer-name" placeholder="Contoh: Reno Saputra" class="checkout-input">
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="order-type">Tipe Pesanan <span class="req">*</span></label>
+                            <select id="order-type" class="checkout-input">
+                                <option value="Dine-in (Makan di Tempat)">Dine-in</option>
+                                <option value="Takeaway (Bawa Pulang)">Takeaway</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group" id="table-group">
+                            <label for="table-number">No. Meja <span class="req">*</span></label>
+                            <input type="text" id="table-number" placeholder="Contoh: 04" class="checkout-input">
+                        </div>
+                    </div>
+
+                    <!-- PILIHAN PEMBAYARAN -->
+                    <div class="input-group">
+                        <label>Metode Pembayaran <span class="req">*</span></label>
+                        <div class="payment-method-options" id="payment-method-options">
+                            <button type="button" class="pay-method-btn active" data-method="QRIS">
+                                <i class="fas fa-qrcode"></i> QRIS Online
+                            </button>
+                            <button type="button" class="pay-method-btn" data-method="Tunai / Kasir">
+                                <i class="fas fa-money-bill-wave"></i> Bayar di Kasir
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PANEL QRIS INTERAKTIF -->
+                    <div class="qris-panel" id="qris-panel">
+                        <div class="qris-top">
+                            <span class="qris-badge"><i class="fas fa-shield-alt"></i> QRIS COFFEE PASOGIT</span>
+                            <span class="qris-amount" id="qris-amount-text">Rp 0</span>
+                        </div>
+
+                        <div class="qris-qr-box">
+                            <canvas id="qris-canvas" width="240" height="285" aria-label="Kode QRIS Coffee Pasogit"></canvas>
+                            <p class="qris-hint">Nominal pesanan tercantum pada QRIS. Unduh gambar QRIS lalu scan di aplikasi bank / e-wallet.</p>
+                            <div class="qris-action-buttons">
+                                <button type="button" class="qris-download-btn" id="download-qris-btn">
+                                    <i class="fas fa-download"></i> Unduh QRIS
+                                </button>
+                                <button type="button" class="qris-copy-btn" id="copy-amount-btn">
+                                    <i class="far fa-copy"></i> Salin Nominal
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="qris-status-box">
+                            <label>Status Pembayaran untuk Laporan WA:</label>
+                            <div class="qris-status-toggle" id="qris-status-toggle">
+                                <button type="button" class="status-opt-btn paid active" data-status="PAID">
+                                    <i class="fas fa-check-circle"></i> PAID (Sudah Bayar)
+                                </button>
+                                <button type="button" class="status-opt-btn unpaid" data-status="TIDAK PAID">
+                                    <i class="fas fa-clock"></i> TIDAK PAID (Belum Bayar)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="checkout-wa-btn" class="btn checkout-btn">
+                        <i class="fab fa-whatsapp"></i> Kirim Pesanan via WhatsApp
+                    </button>
+                    <button type="button" id="clear-cart-btn" class="btn-text-danger">
+                        <i class="fas fa-trash-alt"></i> Kosongkan Keranjang
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MODAL PILIH VARIAN MENU -->
+    <div class="variant-modal" id="variant-modal" role="dialog" aria-modal="true" aria-labelledby="variant-name">
+        <div class="variant-box">
+            <button type="button" id="close-variant" class="icon-close-btn" aria-label="Tutup Pilihan Varian">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="variant-header">
+                <img src="" alt="" id="variant-img">
+                <div>
+                    <h3 id="variant-name">Nama Menu</h3>
+                    <p class="variant-base-price" id="variant-price">Rp 0</p>
+                </div>
+            </div>
+
+            <div class="variant-group" id="temp-group">
+                <label>1. Pilih Penyajian</label>
+                <div class="variant-options" id="temp-options">
+                    <button type="button" class="opt-btn active" data-value="Panas">
+                        <i class="fas fa-fire"></i> Panas
+                    </button>
+                    <button type="button" class="opt-btn" data-value="Dingin">
+                        <i class="fas fa-snowflake"></i> Dingin
+                    </button>
+                </div>
+            </div>
+
+            <div class="variant-group">
+                <label id="size-label">2. Pilih Ukuran Porsi</label>
+                <div class="variant-options" id="size-options">
+                    <button type="button" class="opt-btn active" id="size-opt-1" data-value="Regular" data-extra="0">
+                        Regular
+                    </button>
+                    <button type="button" class="opt-btn" id="size-opt-2" data-value="Large" data-extra="5000">
+                        Large (+Rp 5.000)
+                    </button>
+                </div>
+            </div>
+
+            <div class="variant-group">
+                <label for="variant-note">3. Catatan Tambahan (Opsional)</label>
+                <input type="text" id="variant-note" placeholder="Contoh: Gula sedikit, level pedas sedang, tanpa sayur" class="checkout-input">
+            </div>
+
+            <button type="button" id="confirm-add-cart" class="btn variant-submit-btn">
+                <i class="fas fa-plus-circle"></i> Masukkan ke Keranjang — <span id="variant-final-price">Rp 0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- BERANDA / HOME -->
+    <section class="home" id="home">
+        <div class="row">
+            <div class="content">
+                <h3>JEJAK RASA & CERITA DI COFFEE PASOGIT</h3>
+                <p class="home-desc">Di balik setiap cangkir kopi, piring hangat, dan renyahnya cemilan, selalu ada kisah sederhana yang layak dirayakan.</p>
+                <div class="home-cta">
+                    <a href="#menu" class="btn btn-primary">pesan sekarang</a>
+                    <a href="#about" class="btn btn-outline">tentang pasogit</a>
+                </div>
+            </div>
+
+            <div class="image">
+                <img src="image/home-img-1.png" class="main-home-image" alt="Kopi Pasogit">
+            </div>
+        </div>
+
+        <div class="image-slider">
+            <img src="image/home-img-1.png" alt="Varian Menu 1">
+            <img src="image/home-img-2.png" alt="Varian Menu 2">
+            <img src="image/home-img-3.png" alt="Varian Menu 3">
+        </div>
+    </section>
+
+    <!-- TENTANG KAMI / ABOUT -->
+    <section class="about" id="about">
+        <h1 class="heading">tentang kami <span>mengapa coffee pasogit</span></h1>
+
+        <div class="row">
+            <div class="image">
+                <img src="image/about-img.png" alt="Suasana Coffee Pasogit">
+            </div>
+
+            <div class="content">
+                <h3 class="title">apa yang membuat kopi pasogit istimewa?</h3>
+                <p>Coffee Pasogit memadukan seduhan kopi berkualitas dengan hidangan makanan dan cemilan yang dimasak segar. Cocok untuk sarapan, makan siang, nongkrong sore, hingga teman lembur.</p>
+                <a href="#menu" class="btn">jelajahi menu</a>
+                <div class="icons-container">
+                    <div class="icons">
+                        <img src="image/about-icon-1.png" alt="Kopi & Hidangan Segar">
+                        <h3>racikan segar</h3>
+                    </div>
+                    <div class="icons">
+                        <img src="image/about-icon-2.png" alt="Menu Lengkap">
+                        <h3>minuman & makanan</h3>
+                    </div>
+                    <div class="icons">
+                        <img src="image/about-icon-3.png" alt="Pesan Praktis">
+                        <h3>pesan praktis</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MENU (20 MENU: MINUMAN, MAKANAN, CEMILAN/SNACK) -->
+    <section class="menu" id="menu">
+        <h1 class="heading">menu kami <span>minuman, makanan & snack</span></h1>
+
+        <!-- KONTROL FILTER & PENCARIAN -->
+        <div class="menu-controls">
+            <div class="menu-filter-bar" id="menu-filter-bar">
+                <button type="button" class="filter-btn active" data-filter="all">Semua (20)</button>
+                <button type="button" class="filter-btn" data-filter="minuman">Minuman (8)</button>
+                <button type="button" class="filter-btn" data-filter="makanan">Makanan (6)</button>
+                <button type="button" class="filter-btn" data-filter="snack">Cemilan / Snack (6)</button>
+            </div>
+
+            <div class="menu-search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="menu-search-input" placeholder="Cari kopi, nasi goreng, kentang, matcha...">
+                <button type="button" id="clear-search-btn" title="Hapus pencarian" aria-label="Hapus pencarian">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <p class="menu-result-info" id="menu-result-info">Menampilkan 20 menu</p>
+
+        <div class="box-container" id="menu-box-container">
+            <!-- ================= MINUMAN (8) ================= -->
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-1.png" alt="Espresso Pasogit">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>espresso pasogit</h3>
+                    <p>Ekstraksi biji kopi pilihan dengan crema tebal, karakter bold, dan aroma kuat.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 18.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m1" data-type="drink" data-name="Espresso Pasogit" data-price="18000" data-img="image/menu-1.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-6.png" alt="Kopi Susu Gula Aren">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>kopi susu gula aren</h3>
+                    <p>Andalan Coffee Pasogit dengan manis legit gula aren asli dan susu segar.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 22.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m2" data-type="drink" data-name="Kopi Susu Gula Aren" data-price="22000" data-img="image/menu-6.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-2.png" alt="Caffe Latte Pasogit">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>caffe latte pasogit</h3>
+                    <p>Perpaduan espresso lembut dengan susu segar yang creamy dan seimbang.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 25.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m3" data-type="drink" data-name="Caffe Latte Pasogit" data-price="25000" data-img="image/menu-2.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-3.png" alt="Cappuccino Klasik">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>cappuccino klasik</h3>
+                    <p>Keseimbangan espresso, susu hangat, dan foam susu lembut di bagian atas.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 24.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m4" data-type="drink" data-name="Cappuccino Klasik" data-price="24000" data-img="image/menu-3.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-4.png" alt="Caramel Macchiato">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>caramel macchiato</h3>
+                    <p>Espresso berpadu susu segar dan sentuhan manis karamel yang harum.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 28.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m5" data-type="drink" data-name="Caramel Macchiato" data-price="28000" data-img="image/menu-4.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-5.png" alt="Americano Segar">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>americano segar</h3>
+                    <p>Espresso murni dengan campuran air mineral yang ringan dan menyegarkan.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 20.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m6" data-type="drink" data-name="Americano Segar" data-price="20000" data-img="image/menu-5.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-6.png" alt="Matcha Susu Creamy">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>matcha susu creamy</h3>
+                    <p>Teh hijau matcha pilihan dengan susu segar yang lembut dan menenangkan.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 25.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m7" data-type="drink" data-name="Matcha Susu Creamy" data-price="25000" data-img="image/menu-6.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="minuman" data-type="drink">
+                <img src="image/menu-4.png" alt="Cokelat Belgia Pasogit">
+                <div class="content">
+                    <span class="menu-tag tag-drink">Minuman</span>
+                    <h3>cokelat belgia pasogit</h3>
+                    <p>Minuman cokelat pekat dan creamy tanpa kopi, cocok untuk segala waktu.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 23.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="m8" data-type="drink" data-name="Cokelat Belgia Pasogit" data-price="23000" data-img="image/menu-4.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= MAKANAN (6) ================= -->
+            <div class="box" data-category="makanan" data-type="food">
+                <img src="image/menu-1.png" alt="Nasi Goreng Pasogit">
+                <div class="content">
+                    <span class="menu-tag tag-food">Makanan</span>
+                    <h3>nasi goreng pasogit</h3>
+                    <p>Nasi goreng bumbu rempah khas dengan telur mata sapi, ayam suwir, dan acar segar.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 26.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="f1" data-type="food" data-name="Nasi Goreng Pasogit" data-price="26000" data-img="image/menu-1.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="makanan" data-type="food">
+                <img src="image/menu-2.png" alt="Rice Bowl Ayam Sambal Matah">
+                <div class="content">
+                    <span class="menu-tag tag-food">Makanan</span>
+                    <h3>rice bowl ayam sambal matah</h3>
+                    <p>Nasi hangat dengan potongan ayam gurih dan sambal matah bawang serai segar.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 29.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="f2" data-type="food" data-name="Rice Bowl Ayam Sambal Matah" data-price="29000" data-img="image/menu-2.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="makanan" data-type="food">
+                <img src="image/menu-3.png" alt="Chicken Katsu Rice">
+                <div class="content">
+                    <span class="menu-tag tag-food">Makanan</span>
+                    <h3>chicken katsu rice</h3>
+                    <p>Katsu ayam renyah di luar dan juicy di dalam, disajikan bersama nasi hangat dan saus.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 30.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="f3" data-type="food" data-name="Chicken Katsu Rice" data-price="30000" data-img="image/menu-3.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="makanan" data-type="food">
+                <img src="image/menu-4.png" alt="Mie Goreng Jawa Spesial">
+                <div class="content">
+                    <span class="menu-tag tag-food">Makanan</span>
+                    <h3>mie goreng jawa spesial</h3>
+                    <p>Mie goreng gurih manis dengan sayuran segar, bakso, dan telur orak-arik.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 25.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="f4" data-type="food" data-name="Mie Goreng Jawa Spesial" data-price="25000" data-img="image/menu-4.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="makanan" data-type="food">
+                <img src="image/menu-5.png" alt="Nasi Ayam Geprek Pasogit">
+                <div class="content">
+                    <span class="menu-tag tag-food">Makanan</span>
+                    <h3>nasi ayam geprek pasogit</h3>
+                    <p>Ayam krispi digeprek sambal bawang pedas gurih lengkap dengan nasi putih hangat.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 27.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="f5" data-type="food" data-name="Nasi Ayam Geprek Pasogit" data-price="27000" data-img="image/menu-5.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="makanan" data-type="food">
+                <img src="image/menu-6.png" alt="Spaghetti Aglio Olio Tuna">
+                <div class="content">
+                    <span class="menu-tag tag-food">Makanan</span>
+                    <h3>spaghetti aglio olio tuna</h3>
+                    <p>Pasta aglio olio harum bawang putih dan cabai dengan suwiran tuna gurih.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 28.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="f6" data-type="food" data-name="Spaghetti Aglio Olio Tuna" data-price="28000" data-img="image/menu-6.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= CEMILAN / SNACK (6) ================= -->
+            <div class="box" data-category="snack" data-type="snack">
+                <img src="image/menu-5.png" alt="Kentang Goreng Crispy">
+                <div class="content">
+                    <span class="menu-tag tag-snack">Cemilan / Snack</span>
+                    <h3>kentang goreng crispy</h3>
+                    <p>Potongan kentang goreng renyah dengan taburan bumbu gurih dan saus cocolan.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 16.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="s1" data-type="snack" data-name="Kentang Goreng Crispy" data-price="16000" data-img="image/menu-5.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="snack" data-type="snack">
+                <img src="image/menu-6.png" alt="Pisang Goreng Gula Aren">
+                <div class="content">
+                    <span class="menu-tag tag-snack">Cemilan / Snack</span>
+                    <h3>pisang goreng gula aren</h3>
+                    <p>Pisang pilihan berbalut tepung renyah dengan siraman gula aren dan keju/cokelat.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 17.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="s2" data-type="snack" data-name="Pisang Goreng Gula Aren" data-price="17000" data-img="image/menu-6.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="snack" data-type="snack">
+                <img src="image/menu-1.png" alt="Tahu Crispy Cabe Garam">
+                <div class="content">
+                    <span class="menu-tag tag-snack">Cemilan / Snack</span>
+                    <h3>tahu crispy cabe garam</h3>
+                    <p>Tahu renyah yang ditumis bersama bawang putih, cabai rawit, dan daun bawang.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 15.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="s3" data-type="snack" data-name="Tahu Crispy Cabe Garam" data-price="15000" data-img="image/menu-1.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="snack" data-type="snack">
+                <img src="image/menu-2.png" alt="Cireng Isi Ayam Suwir">
+                <div class="content">
+                    <span class="menu-tag tag-snack">Cemilan / Snack</span>
+                    <h3>cireng isi ayam suwir</h3>
+                    <p>Cireng kenyal di dalam dan garing di luar dengan isian ayam suwir berbumbu.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 16.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="s4" data-type="snack" data-name="Cireng Isi Ayam Suwir" data-price="16000" data-img="image/menu-2.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="snack" data-type="snack">
+                <img src="image/menu-3.png" alt="Roti Bakar Cokelat Keju">
+                <div class="content">
+                    <span class="menu-tag tag-snack">Cemilan / Snack</span>
+                    <h3>roti bakar cokelat keju</h3>
+                    <p>Roti panggang mentega empuk dengan lapisan cokelat lumer dan parutan keju.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 19.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="s5" data-type="snack" data-name="Roti Bakar Cokelat Keju" data-price="19000" data-img="image/menu-3.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box" data-category="snack" data-type="snack">
+                <img src="image/menu-4.png" alt="Platter Cemilan Pasogit">
+                <div class="content">
+                    <span class="menu-tag tag-snack">Cemilan / Snack</span>
+                    <h3>platter cemilan pasogit</h3>
+                    <p>Paket berbagi berisi kentang goreng, sosis, dan nugget untuk nongkrong rame-rame.</p>
+                    <div class="menu-action">
+                        <span class="price">Rp 32.000</span>
+                        <button type="button" class="btn add-order-btn"
+                            data-id="s6" data-type="snack" data-name="Platter Cemilan Pasogit" data-price="32000" data-img="image/menu-4.png">
+                            <i class="fas fa-cart-plus"></i> Pesan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESAN JIKA PENCARIAN KOSONG -->
+        <div class="empty-search-state" id="empty-search-state">
+            <i class="fas fa-search"></i>
+            <p>Menu yang kamu cari belum ditemukan.</p>
+            <button type="button" class="btn btn-primary" id="reset-filter-btn">Tampilkan Semua Menu</button>
+        </div>
+    </section>
+
+    <!-- ULASAN / REVIEW & FORM TULIS ULASAN PENGGUNA -->
+    <section class="review" id="review">
+        <h1 class="heading">ulasan <span>kata pelanggan</span></h1>
+
+        <div class="swiper review-slider">
+            <div class="swiper-wrapper" id="review-swiper-wrapper">
+                <div class="swiper-slide box">
+                    <i class="fas fa-quote-left"></i>
+                    <i class="fas fa-quote-right"></i>
+                    <img src="image/pic-1.png" alt="Pelanggan 1">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p>Kopi susu gula arennya pas banget, ditambah nasi goreng pasogit buat makan malam makin mantap.</p>
+                    <h3>rizky pratama</h3>
+                    <span>pelanggan setia</span>
+                </div>
+
+                <div class="swiper-slide box">
+                    <i class="fas fa-quote-left"></i>
+                    <i class="fas fa-quote-right"></i>
+                    <img src="image/pic-2.png" alt="Pelanggan 2">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p>Cemilan pisang goreng gula aren sama kentang gorengnya enak buat ngobrol, pesan langsung ke WA juga gampang.</p>
+                    <h3>nadia kusuma</h3>
+                    <span>pelanggan setia</span>
+                </div>
+
+                <div class="swiper-slide box">
+                    <i class="fas fa-quote-left"></i>
+                    <i class="fas fa-quote-right"></i>
+                    <img src="image/pic-3.png" alt="Pelanggan 3">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p>Rice bowl ayam sambal matah dan matcha susu creamy-nya juara. Porsinya mengenyangkan.</p>
+                    <h3>dimas saputra</h3>
+                    <span>pelanggan setia</span>
+                </div>
+
+                <div class="swiper-slide box">
+                    <i class="fas fa-quote-left"></i>
+                    <i class="fas fa-quote-right"></i>
+                    <img src="image/pic-4.png" alt="Pelanggan 4">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p>Pilihan menu minuman, makanan berat, dan snack-nya lengkap jadi nggak perlu pindah tempat.</p>
+                    <h3>ayu lestari</h3>
+                    <span>pelanggan setia</span>
+                </div>
+            </div>
+            <div class="swiper-pagination"></div>
+        </div>
+
+        <!-- FORM ULASAN DI BAWAH UNTUK DIISI PENGGUNA -->
+        <div class="review-form-wrapper">
+            <h3><i class="fas fa-pen-nib"></i> Tulis Ulasan Kamu</h3>
+            <p class="review-form-sub">Bagikan pengalamanmu menikmati kopi, makanan, atau cemilan di Coffee Pasogit.</p>
+
+            <form id="user-review-form" class="review-submit-form">
+                <div class="review-rating-picker">
+                    <label>Rating Kamu:</label>
+                    <div class="rating-stars-select" id="rating-stars-select" role="radiogroup" aria-label="Pilih rating 1 sampai 5 bintang">
+                        <button type="button" class="star-pick-btn active" data-value="1" aria-label="1 bintang"><i class="fas fa-star"></i></button>
+                        <button type="button" class="star-pick-btn active" data-value="2" aria-label="2 bintang"><i class="fas fa-star"></i></button>
+                        <button type="button" class="star-pick-btn active" data-value="3" aria-label="3 bintang"><i class="fas fa-star"></i></button>
+                        <button type="button" class="star-pick-btn active" data-value="4" aria-label="4 bintang"><i class="fas fa-star"></i></button>
+                        <button type="button" class="star-pick-btn active" data-value="5" aria-label="5 bintang"><i class="fas fa-star"></i></button>
+                        <span class="rating-value-label" id="rating-value-label">5 / 5</span>
+                    </div>
+                </div>
+
+                <div class="review-input-grid">
+                    <input type="text" id="rev-author" placeholder="Nama Kamu *" required>
+                    <input type="text" id="rev-role" placeholder="Status (misal: Pelanggan Dine-in)">
+                </div>
+
+                <textarea id="rev-comment" rows="3" placeholder="Tulis ulasan menu atau pelayanan di sini... *" required></textarea>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Kirim Ulasan
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- RESERVASI / BOOK -->
+    <section class="book" id="book">
+        <h1 class="heading">reservasi <span>pesan tempat duduk</span></h1>
+
+        <form id="reservation-form">
+            <input type="text" id="res-name" placeholder="Nama Lengkap" class="box" required>
+            <input type="email" id="res-email" placeholder="Alamat Email" class="box" required>
+            <input type="tel" id="res-phone" placeholder="Nomor WhatsApp / HP" class="box" required>
+            <textarea id="res-message" placeholder="Catatan reservasi (jumlah orang, jam kedatangan, dll.)" class="box" cols="30" rows="10"></textarea>
+            <button type="submit" class="btn btn-primary">kirim reservasi</button>
+        </form>
+    </section>
+
+    <!-- FOOTER -->
+    <section class="footer">
+        <div class="box-container">
+            <div class="box">
+                <h3>area layanan</h3>
+                <a href="#book"><i class="fas fa-arrow-right"></i> ngamprah</a>
+                <a href="#book"><i class="fas fa-arrow-right"></i> cimahi</a>
+                <a href="#book"><i class="fas fa-arrow-right"></i> bandung</a>
+                <a href="#book"><i class="fas fa-arrow-right"></i> lembang</a>
+            </div>
+
+            <div class="box">
+                <h3>tautan cepat</h3>
+                <a href="#home"><i class="fas fa-arrow-right"></i> beranda</a>
+                <a href="#about"><i class="fas fa-arrow-right"></i> tentang kami</a>
+                <a href="#menu"><i class="fas fa-arrow-right"></i> menu</a>
+                <a href="#review"><i class="fas fa-arrow-right"></i> ulasan</a>
+                <a href="#book"><i class="fas fa-arrow-right"></i> reservasi</a>
+            </div>
+
+            <div class="box">
+                <h3>kontak kami</h3>
+                <a href="https://wa.me/6281938179068" target="_blank"><i class="fas fa-phone"></i> 0819-3817-9068</a>
+                <a href="mailto:halo@coffeepasogit.id"><i class="fas fa-envelope"></i> halo@coffeepasogit.id</a>
+                <a href="#book"><i class="fas fa-map-marker-alt"></i> Jawa Barat, Indonesia</a>
+            </div>
+
+            <div class="box">
+                <h3>media sosial</h3>
+                <a href="#"><i class="fab fa-instagram"></i> instagram</a>
+                <a href="#"><i class="fab fa-facebook-f"></i> facebook</a>
+                <a href="#"><i class="fab fa-tiktok"></i> tiktok</a>
+                <a href="https://wa.me/6281938179068" target="_blank"><i class="fab fa-whatsapp"></i> whatsapp</a>
+            </div>
+        </div>
+
+        <div class="credit">dikembangkan untuk <span>coffee pasogit</span> | semua hak dilindungi</div>
+    </section>
+
+    <!-- SWIPER -->
+    <script src="https://unpkg.com/swiper@7/swiper-bundle.min.js"></script>
+
+    <!-- Custom JS File Link -->
+    <script src="js/script.js"></script>
+
+</body>
+
+</html>
